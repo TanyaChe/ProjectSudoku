@@ -28,3 +28,5 @@ F:\3курс\ТП\SUDOKU\obj\x86\Debug\SUDOKU.SudokuForm.resources
 F:\3курс\ТП\SUDOKU\obj\x86\Debug\SUDOKU.Properties.Resources.resources
 F:\3курс\ТП\SUDOKU\obj\x86\Debug\GenerateResource.read.1.tlog
 F:\3курс\ТП\SUDOKU\obj\x86\Debug\GenerateResource.write.1.tlog
+P:\GitHubDesktop\Repo\ProjectSudoku\SUDOKU\obj\x86\Debug\EXAMPLE2010.exe
+P:\GitHubDesktop\Repo\ProjectSudoku\SUDOKU\obj\x86\Debug\EXAMPLE2010.pdb

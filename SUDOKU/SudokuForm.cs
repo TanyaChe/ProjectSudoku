@@ -233,6 +233,7 @@ namespace SUDOKU
                         save += Convert.ToInt32(kod.GetValue(j, i));
 
                 File.WriteAllText(@SFD.FileName, save);
+                MessageBox.Show("Игра сохранена в файл \""+SFD.FileName+"\"!");
             }
             OFD.FileName = "";
 
