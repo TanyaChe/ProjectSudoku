@@ -16,8 +16,7 @@ namespace SUDOKU
         //экземпляры
 
         public DataGridView[] field;
-        StartingValue[] startVals;
-        StartingValue[] DEBUG_ONLY;//!!!пока нет генератора, удалить
+        StartingValue[] startVals;//массив структур, описывающих начальные значения (координаты и само значение)
         SoundPlayer sp;//для музыки
         Kod kod;
         MyTimer mytimer;
@@ -27,13 +26,12 @@ namespace SUDOKU
         public SudokuForm()
         {
             InitializeComponent();
-            field = new DataGridView[] { Grid1, Grid2, Grid3, Grid4, Grid5, Grid6, Grid7, Grid8, Grid9 };//представление 9 datagridview как одного поля + проще обращаться к кадому
+            field = new DataGridView[] { Grid1, Grid2, Grid3, Grid4, Grid5, Grid6, Grid7, Grid8, Grid9 };//представление 9 datagridview как одного поля + проще обращаться к каждому
             kod = new Kod(field);//класс со "сложными" методами
             sp = new SoundPlayer(Application.StartupPath + @"\Media\1.wav");//путь до файла с музыкой
             mytimer = new MyTimer();
             StartProg();
 
-            DEBUG_ONLY = new StartingValue[] { new StartingValue(1, 0, 0), new StartingValue(2, 1, 0) };//!!!пока нет генератора, удалить
         }
 
 
@@ -50,6 +48,17 @@ namespace SUDOKU
 
                 field[i].Enabled = false;
             }
+        }
+
+        private void StartNewGame(int v)//начала НОВОЙ игры (c генерацией поля)
+        {
+            Queue<StartingValue> qsv = new StartingGenerator(v).Generate();
+            startVals = new StartingValue[qsv.Count];
+            int c = qsv.Count;
+            for (int i = 0; i < c; i++)
+                startVals[i] = qsv.Dequeue();
+            SetStartingValues();//выставляет и блокирует начальные значения
+            StartGame();//начало игры
         }
 
         private void StartGame()//начало игры
@@ -108,7 +117,7 @@ namespace SUDOKU
             {
                 if (!kod.GridCheck(field[i]))//проверка по полям
                 {
-                    MessageBox.Show("Одинаковые символы в " + FieldName(i) + " поле!");
+                    MessageBox.Show("Одинаковые символы в " + FieldName(i) + " районе!");
                     return false;
                 }
                 if (!kod.RowCheck(i))//проверка по строкам
@@ -182,30 +191,25 @@ namespace SUDOKU
             DifficultyForm form = new DifficultyForm();
             form.ShowDialog();
             int diff = form.diff;
-            startVals = DEBUG_ONLY;//!!!Тут, вместо DEBUG_ONLY, сгенерировать стартовые значения в виде массива класса StartingValue и вставить в экземпляр массива "startVals" в зависимости от сложности diff. 
-            //Если будешь делать отдельный класс для генератора, забери туда массив "startVals" (надо еще будет ссылки на него пофиксить)
             switch (diff)
             {
                 case (1):
                     //Начать игру на сложности Простая, 3-5 начальных цифры в одном квадрате
 
                     LDiff.Text = "Простая";
-                    SetStartingValues();//выставляет и блокирует начальные значения
-                    StartGame();//начало игры
+                    StartNewGame(diff);//начала НОВОЙ игры (c генерацией поля)
                     break;
                 case (2):
                     //Начать игру на сложности Средняя, 3-4 начальных цифры в одном квадрате
 
                     LDiff.Text = "Средняя";
-                    SetStartingValues();
-                    StartGame();
+                    StartNewGame(diff);
                     break;
                 case (3):
                     //Начать игру на сложности Сложная, 2-4 начальных цифры в одном квадрате
 
                     LDiff.Text = "Сложная";
-                    SetStartingValues();
-                    StartGame();
+                    StartNewGame(diff);
                     break;
                 default: break;
             }
@@ -222,6 +226,7 @@ namespace SUDOKU
 
                 for (int i = 0; i < startVals.Length; i++)
                 {
+                    save += startVals[i].val;
                     save += startVals[i].x;
                     save += startVals[i].y;
                 }
@@ -233,7 +238,7 @@ namespace SUDOKU
                         save += Convert.ToInt32(kod.GetValue(j, i));
 
                 File.WriteAllText(@SFD.FileName, save);
-                MessageBox.Show("Игра сохранена в файл \""+SFD.FileName+"\"!");
+                MessageBox.Show("Игра сохранена в файл \"" + SFD.FileName + "\"!");
             }
             OFD.FileName = "";
 
@@ -257,12 +262,13 @@ namespace SUDOKU
                     s += load[i];
 
                 }
-                startVals = new StartingValue[s.Length / 2];
+                startVals = new StartingValue[s.Length / 3];
 
-                for (int i = j; load[i] != '!' && i < load.Length - 1; i = i + 2)
+                for (int i = j; load[j] != '!' && i < load.Length - 1; i = i + 3)
                 {
-                    startVals[i / 2].x = Int32.Parse("" + s[j++]);
-                    startVals[i / 2].y = Int32.Parse("" + s[j++]);
+                    startVals[i / 3].val = Int32.Parse("" + s[j++]);
+                    startVals[i / 3].x = Int32.Parse("" + s[j++]);
+                    startVals[i / 3].y = Int32.Parse("" + s[j++]);
                 }
                 s = "";
 
@@ -280,11 +286,11 @@ namespace SUDOKU
                 LDiff.Text = s;
                 s = "";
 
-                for (int i = ++j; i < load.Length - j; i++)
+                for (int i = ++j; i < load.Length; i++)
                 {
-                    int x=(i - j) % 9,
-                        y=(i - j) / 9,
-                        v = Int32.Parse(""+load[i]);
+                    int x = (i - j) % 9,
+                        y = (i - j) / 9,
+                        v = Int32.Parse("" + load[i]);
                     if (v != 0)
                         kod.SetValue((object)v, x, y);
                     else
@@ -293,15 +299,15 @@ namespace SUDOKU
 
                 }
 
-                for (int i = 0; i < startVals.Length;i++ )//дописываем значения в массив startVals и блокируем редактирование у начальных ячеек
+                for (int i = 0; i < startVals.Length; i++)//дописываем значения в массив startVals и блокируем редактирование у начальных ячеек
                 {
                     DataGridViewCell o = kod.GetCell(startVals[i].x, startVals[i].y);
                     startVals[i].val = Convert.ToInt32(o.Value);
                     o.ReadOnly = true;
                 }
 
-                    if (BNewgame.Visible)//если загружаемся с еще не начатой игрой
-                        StartGame();
+                if (BNewgame.Visible)//если загружаемся с еще не начатой игрой
+                    StartGame();
 
                 Timer.Enabled = true;
             }
